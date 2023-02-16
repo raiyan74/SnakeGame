@@ -1,0 +1,282 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Random;
+
+public class GamePanel extends JPanel implements ActionListener {
+
+    static final int SCREEN_WIDTH = 600;
+    static final int SCREEN_HEIGHT = 600;
+    static final int UNIT_SIZE = 25;
+    static final int GAME_UNTIS = (SCREEN_WIDTH*SCREEN_HEIGHT)/UNIT_SIZE;
+    static final int DELAY = 75;
+    final int[] x = new int[GAME_UNTIS]; // holds all x coords of the snake
+    final int[] y = new int[GAME_UNTIS]; // holds all y coords of the snake
+
+    int bodyparts = 5;
+    int appleEaten;
+    int appleX;
+    int appleY;
+    char direction = 'R';
+    boolean running = false;
+    Timer timer;
+    Random random;
+
+    public GamePanel(){
+
+        random = new Random();
+
+        this.setPreferredSize(new Dimension(SCREEN_WIDTH,SCREEN_HEIGHT+(UNIT_SIZE*3)));
+        this.setBackground(new Color(170, 200, 60));
+        this.setFocusable(true);
+        this.addKeyListener(new MyKeyAdapter());
+
+        startGame();
+    }
+
+
+
+    public void startGame(){
+
+        newApple();
+
+        running = true;
+
+        newSnake();
+
+        timer = new Timer(DELAY,this);
+        timer.start();
+
+    }
+
+    public void paintComponent(Graphics g){
+
+        super.paintComponent(g);
+        draw(g);
+    }
+
+    public void draw(Graphics g){
+
+        //startScreen(g);
+
+        if(running) {
+
+            /*for (int i = 0; i < SCREEN_HEIGHT / UNIT_SIZE; i++) {
+                g.drawLine(i * UNIT_SIZE, 0, i * UNIT_SIZE, SCREEN_HEIGHT);
+                g.drawLine(0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE);
+            }*/
+
+            //apple attbs
+            g.setColor(Color.black);
+            g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+
+            //snake attbs
+            for (int i = 0; i < bodyparts; i++) {
+
+                if (i == 0) {
+
+                    g.setColor(new Color(25, 35, 5));
+                    g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+
+                } else {
+
+                    g.setColor(new Color(45, 50, 80));
+                    g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+                }
+            }
+
+            //Score text
+            g.setColor(Color.black);
+            g.setFont(new Font("Copperplate Gothic Bold", Font.PLAIN, 30));
+            FontMetrics metrics = getFontMetrics(g.getFont());
+            g.drawString("Score: "+appleEaten, (SCREEN_WIDTH - metrics.stringWidth("Score: "+appleEaten))-(UNIT_SIZE), SCREEN_HEIGHT+(UNIT_SIZE*2));
+
+        }else{
+            gameOver(g);
+        }
+
+    }
+
+    //makes apple appear in a random spot everytime this method is called
+    public void newApple(){
+        appleX = random.nextInt((SCREEN_WIDTH/UNIT_SIZE))*UNIT_SIZE;
+        appleY = random.nextInt((SCREEN_HEIGHT/UNIT_SIZE))*UNIT_SIZE;
+    }
+
+    public void newSnake(){
+        // randomly generate the starting position of the snake
+        int startingX = random.nextInt((SCREEN_WIDTH/2 - UNIT_SIZE) / UNIT_SIZE) * UNIT_SIZE;
+        int startingY = random.nextInt((SCREEN_HEIGHT - UNIT_SIZE * 4) / UNIT_SIZE) * UNIT_SIZE;
+
+        // initialize the snake with the starting position
+        bodyparts = 6;
+        for (int i = 0; i < bodyparts; i++) {
+            x[i] = startingX - i * UNIT_SIZE;
+            y[i] = startingY;
+        }
+    }
+
+    public void move(){
+
+        for (int i = bodyparts; i > 0; i--){ //moving the whole body of the snake by one unit after each frame so it looks like the whole body is moving
+            x[i] = x[i - 1];
+            y[i] = y[i - 1];
+        }
+
+        switch (direction) {
+            case 'U' -> //up
+                    y[0] = y[0] - UNIT_SIZE;
+            case 'D' -> //down
+                    y[0] = y[0] + UNIT_SIZE;
+            case 'L' -> //left
+                    x[0] = x[0] - UNIT_SIZE;
+            case 'R' -> x[0] = x[0] + UNIT_SIZE;
+        }
+
+    }
+
+    public void checkApple(){
+
+        if((x[0] == appleX) &&(y[0] == appleY)){ //if snake head coords equals the coords of the apple
+            bodyparts++;
+            appleEaten++;
+            newApple(); //calls method
+        }
+
+    }
+
+    public void checkCollisions(){
+        //checks if head collides with body
+        for(int i = bodyparts; i>0; i--){
+            if ((x[0] == x[i]) && (y[0] == y[i])){
+                running = false;
+            }else{
+                break;
+            }
+        }
+
+        //checks if head touches Left border
+        if(x[0] < 0){
+            running = false;
+        }
+
+        //checks if head touches Right border
+        if(x[0] > SCREEN_WIDTH){
+            running = false;
+        }
+
+        //checks if head touches Top border
+        if(y[0] < 0){
+            running = false;
+        }
+
+        //checks if head touches Bottom border
+        if(y[0] > SCREEN_HEIGHT){
+            running = false;
+        }
+
+        if(!running){
+            timer.stop();
+        }
+
+    }
+
+    public void startScreen(Graphics g){
+
+        //game over text
+        g.setColor(new Color(13,20,6));
+        g.setFont(new Font("Copperplate Gothic Bold", Font.BOLD, 75));
+        FontMetrics metrics1 = getFontMetrics(g.getFont());
+        g.drawString("PRESS SPACE TO START", (SCREEN_WIDTH - metrics1.stringWidth("PRESS SPACE TO START"))/2, (SCREEN_HEIGHT+(UNIT_SIZE*3))/2);
+
+    }
+
+    public void gameOver(Graphics g){
+
+        running = false;
+        timer.stop();
+
+        //game over text
+        g.setColor(new Color(13,20,6));
+        g.setFont(new Font("Copperplate Gothic Bold", Font.BOLD, 75));
+        FontMetrics metrics1 = getFontMetrics(g.getFont());
+        g.drawString("GAME OVER", (SCREEN_WIDTH - metrics1.stringWidth("GAME OVER"))/2, (SCREEN_HEIGHT+(UNIT_SIZE*3))/2);
+
+        //Score text
+        g.setColor(new Color(13,20,6));
+        g.setFont(new Font("Copperplate Gothic Bold", Font.PLAIN, 40));
+        FontMetrics metrics2 = getFontMetrics(g.getFont());
+        g.drawString("Score: "+appleEaten, (SCREEN_WIDTH - metrics2.stringWidth("Score: "+appleEaten))/2, SCREEN_HEIGHT-(UNIT_SIZE*8));
+
+        //Restart text
+        g.setColor(new Color(50,90,10));
+        g.setFont(new Font("Copperplate Gothic Bold", Font.BOLD, 30));
+        FontMetrics metrics3 = getFontMetrics(g.getFont());
+        g.drawString("PRESS ENTER TO RESTART", (SCREEN_WIDTH - metrics3.stringWidth(("PRESS ENTER TO RESTART")))/2, SCREEN_HEIGHT-(UNIT_SIZE));
+
+    }
+
+
+    public class MyKeyAdapter extends KeyAdapter{
+        @Override
+        public void keyPressed(KeyEvent e){
+
+            switch (e.getKeyCode()){
+
+                case KeyEvent.VK_LEFT:
+                    if (direction != 'R'){
+                        direction = 'L';
+                    }
+                    break;
+
+                case KeyEvent.VK_RIGHT:
+                    if (direction != 'L'){
+                        direction = 'R';
+                    }
+                    break;
+
+                case KeyEvent.VK_UP:
+                    if (direction != 'D'){
+                        direction = 'U';
+                    }
+                    break;
+
+                case KeyEvent.VK_DOWN:
+                    if (direction != 'U'){
+                        direction = 'D';
+                    }
+                    break;
+            }
+
+            int key = e.getKeyCode();
+            if (key == KeyEvent.VK_ENTER && !running) {
+                restartGame();
+            }
+
+            int key2 = e.getKeyCode();
+            if (key2 == KeyEvent.VK_SPACE && !running) {
+                restartGame();
+            }
+
+        }
+    }
+
+    public void restartGame(){
+
+        appleEaten = 0;
+
+        startGame();
+
+    }
+
+
+    @Override
+    public void actionPerformed(ActionEvent e){
+        if (running){
+            move();
+            checkApple();
+            checkCollisions();
+        }
+        repaint();
+    }
+}
