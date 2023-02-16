@@ -1,0 +1,22 @@
+import javax.swing.*;
+import java.awt.event.*;
+
+public class GameFrame extends JFrame {
+
+    GameFrame(){
+
+        //making the window which is the panel/frame the game is going to be inside of
+        GamePanel panel = new GamePanel();
+
+
+        this.add(panel);
+        this.setTitle("Snake");
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        this.setResizable(false);
+        this.pack();
+        this.setVisible(true);
+        this.setLocationRelativeTo(null);
+
+    }
+}
